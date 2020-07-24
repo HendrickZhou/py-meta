@@ -1,8 +1,44 @@
-# v5
-# use meta class
+# -*- coding: utf-8 -*-
+# let's make it type checking
 
 from inspect import Parameter, Signature
 
+###########################################
+# new thing here
+class Descriptor(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, inst, cls):
+        print("Get")
+        return inst.__dict__[self.name]
+
+    def __set__(self, inst, val):
+        print("Set")
+        inst.__dict__[self.name] = val
+
+    def __delete__(self, inst):
+        print("del")
+        del inst.__dict__[self.name]
+
+class Typed(Descriptor):
+    ty = None # expected type
+
+    def __set__(self, inst, val):
+        if not isinstance(val, self.ty):
+            raise TypeError("Expect:{}".format(self.ty))
+        super().__set__(inst, val)
+
+class Integer(Typed):
+    ty = int
+
+class String(Typed):
+    ty = str
+
+class Float(Typed):
+    ty = float
+
+############################################
 def make_signature(names):
     return Signature(Parameter(name, Parameter.POSITIONAL_OR_KEYWORD) for name in names)
 
@@ -31,11 +67,10 @@ class Structure(metaclass=StructMeta):
 
 class Stock(Structure):
     _fields = ["name", "shares", "price"]
+    name = String("name")
+    shares = Integer("shares")
+    price = Float("price")
 
 class Address(Structure):
     _fields = ["hostname", "port"]
 
-
-
-s = Stock("name_var", 100, 12.3)
-a = Address("hostname_var", 8001)
